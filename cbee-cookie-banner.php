@@ -2,7 +2,7 @@
 /**
  * Plugin Name: CBee Cookie Banner
  * Description: Schlanker Cookie-Banner (CH): Akzeptieren / Einstellungen, Google Analytics erst nach Einwilligung.
- * Version: 0.2.0
+ * Version: 0.3.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Text Domain: cbee-cookie-banner
@@ -11,7 +11,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-const SCB_VERSION = '0.2.0';
+const SCB_VERSION = '0.3.0';
 const SCB_OPTION  = 'scb_options';
 
 function scb_defaults() {
@@ -47,6 +47,27 @@ add_action( 'wp_enqueue_scripts', function () {
 		'before'
 	);
 } );
+
+// Neutralise Google tag loaders in the final HTML so the browser never fetches them before consent.
+// Same output for every visitor (cache-safe); banner.js re-activates them after consent.
+add_action( 'template_redirect', function () {
+	if ( is_feed() || is_robots() || is_trackback() || wp_doing_ajax() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
+		return;
+	}
+	ob_start( 'scb_block_tags' );
+}, 0 );
+
+function scb_block_tags( $html ) {
+	if ( false === stripos( $html, '</head>' ) ) {
+		return $html;
+	}
+	$re = '#<script\b[^>]*\bsrc=["\'][^"\']*(?:googletagmanager\.com/(?:gtag/js|gtm\.js)|google-analytics\.com/(?:analytics|ga)\.js)[^"\']*["\'][^>]*>#i';
+	return preg_replace_callback( $re, function ( $m ) {
+		$tag = preg_replace( '#\stype=(["\'])[^"\']*\1#i', '', $m[0] );
+		$tag = preg_replace( '#\ssrc=#i', ' type="text/plain" data-scb-category="analytics" data-scb-src=', $tag, 1 );
+		return $tag;
+	}, $html );
+}
 
 // Register as a consent management plugin with the WP Consent API (opt-in model).
 add_filter( 'wp_get_consent_type', function () {

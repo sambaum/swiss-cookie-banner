@@ -30,8 +30,16 @@
 		});
 	}
 
-	// Tell the WP Consent API (Site Kit etc.) about the choice.
+	// Google Consent Mode: Site Kit sets everything to denied by default, we send the update.
+	function updateGtagConsent(analytics) {
+		window.dataLayer = window.dataLayer || [];
+		window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
+		window.gtag('consent', 'update', { analytics_storage: analytics ? 'granted' : 'denied' });
+	}
+
+	// Also tell the WP Consent API, if that plugin is installed.
 	function syncConsentApi(analytics) {
+		updateGtagConsent(analytics);
 		if (typeof window.wp_set_consent !== 'function') return;
 		window.wp_set_consent('functional', 'allow');
 		window.wp_set_consent('statistics', analytics ? 'allow' : 'deny');
@@ -44,7 +52,15 @@
 	function loadAnalytics() {
 		if (analyticsLoaded) return;
 		analyticsLoaded = true;
-		if (C.gaId) {
+		document.querySelectorAll('script[data-scb-src]').forEach(function (old) {
+			var s = document.createElement('script');
+			Array.prototype.forEach.call(old.attributes, function (a) {
+				if (['type', 'data-scb-src', 'data-scb-category'].indexOf(a.name) < 0) s.setAttribute(a.name, a.value);
+			});
+			s.src = old.getAttribute('data-scb-src');
+			old.parentNode.replaceChild(s, old);
+		});
+		if (C.gaId && !document.querySelector('script[src*="gtag/js"]')) {
 			window.dataLayer = window.dataLayer || [];
 			window.gtag = function () { window.dataLayer.push(arguments); };
 			window.gtag('js', new Date());
