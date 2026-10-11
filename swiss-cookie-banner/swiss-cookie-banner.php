@@ -1,12 +1,13 @@
 <?php
 /**
- * Plugin Name: CBee Cookie Banner
- * Description: Schlanker Cookie-Banner (CH): Akzeptieren / Einstellungen, Google Analytics erst nach Einwilligung.
+ * Plugin Name: Swiss Cookie Banner
+ * Description: Lightweight cookie banner for Swiss sites. Accept / Settings, and Google tags stay blocked until the visitor consents.
  * Version: 0.4.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
- * Text Domain: cbee-cookie-banner
- * Domain Path: /languages
+ * License: GPL-2.0-or-later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Text Domain: swiss-cookie-banner
  */
 
 defined( 'ABSPATH' ) || exit;
