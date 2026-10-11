@@ -2,7 +2,7 @@
 /**
  * Plugin Name: CBee Cookie Banner
  * Description: Schlanker Cookie-Banner (CH): Akzeptieren / Einstellungen, Google Analytics erst nach Einwilligung.
- * Version: 0.3.0
+ * Version: 0.4.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Text Domain: cbee-cookie-banner
@@ -11,15 +11,13 @@
 
 defined( 'ABSPATH' ) || exit;
 
-const SCB_VERSION = '0.3.0';
+const SCB_VERSION = '0.4.0';
 const SCB_OPTION  = 'scb_options';
 
 function scb_defaults() {
 	return array(
 		'privacy_url'    => '',
 		'policy_version' => 1,
-		'ga_id'          => '',
-		'extra_js'       => '',
 		'text'           => 'Wir verwenden Cookies, um die Website zu betreiben und – mit Ihrer Einwilligung – um die Nutzung zu analysieren.',
 	);
 }
@@ -40,7 +38,6 @@ add_action( 'wp_enqueue_scripts', function () {
 		'scb',
 		'window.SCB=' . wp_json_encode( array(
 			'version'    => (int) $o['policy_version'],
-			'gaId'       => $o['ga_id'],
 			'text'       => $o['text'],
 			'privacyUrl' => $o['privacy_url'],
 		) ) . ';',
@@ -75,14 +72,6 @@ add_filter( 'wp_get_consent_type', function () {
 } );
 add_filter( 'wp_consent_api_registered_' . plugin_basename( __FILE__ ), '__return_true' );
 
-// Extra analytics code is inert until the JS activates it after consent.
-add_action( 'wp_footer', function () {
-	$o = scb_options();
-	if ( '' !== trim( $o['extra_js'] ) ) {
-		echo '<script type="text/plain" data-scb-category="analytics">' . $o['extra_js'] . "</script>\n"; // phpcs:ignore WordPress.Security.EscapeOutput -- admin-only, unfiltered_html gated on save
-	}
-} );
-
 // [cookie_einstellungen] — link to reopen the settings, e.g. for the footer.
 add_shortcode( 'cookie_einstellungen', function ( $atts ) {
 	$atts = shortcode_atts( array( 'text' => 'Cookie-Einstellungen' ), $atts );
@@ -92,12 +81,12 @@ add_shortcode( 'cookie_einstellungen', function ( $atts ) {
 /* ---------- Admin ---------- */
 
 add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), function ( $links ) {
-	array_unshift( $links, '<a href="' . esc_url( admin_url( 'options-general.php?page=scb' ) ) . '">Einstellungen</a>' );
+	array_unshift( $links, '<a href="' . esc_url( admin_url( 'options-general.php?page=scb' ) ) . '">Settings</a>' );
 	return $links;
 } );
 
 add_action( 'admin_menu', function () {
-	add_options_page( 'Cookie-Banner', 'Cookie-Banner', 'manage_options', 'scb', 'scb_render_page' );
+	add_options_page( 'Cookie Banner', 'Cookie Banner', 'manage_options', 'scb', 'scb_render_page' );
 } );
 
 add_action( 'admin_init', function () {
@@ -105,16 +94,11 @@ add_action( 'admin_init', function () {
 } );
 
 function scb_sanitize( $in ) {
-	$old = scb_options();
-	$out = array(
+	return array(
 		'privacy_url'    => esc_url_raw( $in['privacy_url'] ?? '' ),
 		'policy_version' => max( 1, (int) ( $in['policy_version'] ?? 1 ) ),
-		'ga_id'          => preg_match( '/^G-[A-Z0-9]+$/', $ga = strtoupper( trim( $in['ga_id'] ?? '' ) ) ) ? $ga : '',
 		'text'           => sanitize_text_field( $in['text'] ?? '' ),
-		// Raw JS is only accepted from users who may post unfiltered HTML.
-		'extra_js'       => current_user_can( 'unfiltered_html' ) ? wp_unslash( $in['extra_js'] ?? '' ) : $old['extra_js'],
 	);
-	return $out;
 }
 
 function scb_render_page() {
@@ -122,27 +106,23 @@ function scb_render_page() {
 	$n = SCB_OPTION;
 	?>
 	<div class="wrap">
-		<h1>Cookie-Banner</h1>
+		<h1>Cookie Banner</h1>
 		<form method="post" action="options.php">
 			<?php settings_fields( 'scb' ); ?>
 			<table class="form-table" role="presentation">
-				<tr><th><label for="scb_text">Banner-Text</label></th>
+				<tr><th><label for="scb_text">Banner text</label></th>
 					<td><textarea id="scb_text" name="<?php echo esc_attr( $n ); ?>[text]" rows="3" class="large-text"><?php echo esc_textarea( $o['text'] ); ?></textarea></td></tr>
-				<tr><th><label for="scb_privacy">URL Datenschutzerklärung</label></th>
-					<td><input id="scb_privacy" type="url" name="<?php echo esc_attr( $n ); ?>[privacy_url]" value="<?php echo esc_attr( $o['privacy_url'] ); ?>" class="regular-text"></td></tr>
-				<tr><th><label for="scb_ga">Google Analytics ID</label></th>
-					<td><input id="scb_ga" type="text" name="<?php echo esc_attr( $n ); ?>[ga_id]" value="<?php echo esc_attr( $o['ga_id'] ); ?>" placeholder="G-XXXXXXXXXX" class="regular-text">
-					<p class="description">GA4-Messungs-ID. Wird erst nach Einwilligung geladen. Leer lassen, wenn Google Site Kit den Tag einbindet (zusammen mit dem Plugin «WP Consent API»).</p></td></tr>
-				<tr><th><label for="scb_js">Zusätzlicher Analytics-JS-Code</label></th>
-					<td><textarea id="scb_js" name="<?php echo esc_attr( $n ); ?>[extra_js]" rows="6" class="large-text code" <?php disabled( ! current_user_can( 'unfiltered_html' ) ); ?>><?php echo esc_textarea( $o['extra_js'] ); ?></textarea>
-					<p class="description">Optional. Reiner JavaScript-Code ohne &lt;script&gt;-Tags; läuft nur nach Einwilligung.</p></td></tr>
-				<tr><th><label for="scb_ver">Richtlinien-Version</label></th>
+				<tr><th><label for="scb_privacy">Privacy policy URL</label></th>
+					<td><input id="scb_privacy" type="url" name="<?php echo esc_attr( $n ); ?>[privacy_url]" value="<?php echo esc_attr( $o['privacy_url'] ); ?>" class="regular-text">
+					<p class="description">Optional. Adds a link to the banner.</p></td></tr>
+				<tr><th><label for="scb_ver">Policy version</label></th>
 					<td><input id="scb_ver" type="number" min="1" name="<?php echo esc_attr( $n ); ?>[policy_version]" value="<?php echo esc_attr( $o['policy_version'] ); ?>" class="small-text">
-					<p class="description">Erhöhen, damit alle Besucher erneut gefragt werden.</p></td></tr>
+					<p class="description">Increase to ask all visitors for consent again.</p></td></tr>
 			</table>
 			<?php submit_button(); ?>
 		</form>
-		<p>Link zum Wiederöffnen der Einstellungen: Shortcode <code>[cookie_einstellungen]</code> oder ein beliebiger Link auf <code>#cookie-einstellungen</code> (z. B. im Footer-Menü).</p>
+		<p>Google Analytics and Google Tag Manager scripts (e.g. from Site Kit) are blocked automatically until the visitor accepts.</p>
+		<p>To let visitors reopen the settings, use the shortcode <code>[cookie_einstellungen]</code> or link to <code>#cookie-einstellungen</code> (e.g. in the footer menu).</p>
 	</div>
 	<?php
 }

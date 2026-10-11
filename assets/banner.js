@@ -60,21 +60,6 @@
 			s.src = old.getAttribute('data-scb-src');
 			old.parentNode.replaceChild(s, old);
 		});
-		if (C.gaId && !document.querySelector('script[src*="gtag/js"]')) {
-			window.dataLayer = window.dataLayer || [];
-			window.gtag = function () { window.dataLayer.push(arguments); };
-			window.gtag('js', new Date());
-			window.gtag('config', C.gaId);
-			var s = document.createElement('script');
-			s.async = true;
-			s.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(C.gaId);
-			document.head.appendChild(s);
-		}
-		document.querySelectorAll('script[type="text/plain"][data-scb-category="analytics"]').forEach(function (el) {
-			var s = document.createElement('script');
-			s.textContent = el.textContent;
-			el.parentNode.replaceChild(s, el);
-		});
 	}
 
 	function el(tag, attrs, children) {
