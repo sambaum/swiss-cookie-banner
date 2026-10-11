@@ -92,7 +92,7 @@
 		var settings = el('button', { type: 'button', 'class': 'scb-btn scb-link' }, ['Einstellungen']);
 		accept.onclick = function () { decide(true); };
 		settings.onclick = openModal;
-		bar = el('div', { id: 'scb-bar', role: 'region', 'aria-label': 'Cookie-Hinweis' }, [p, el('div', { 'class': 'scb-actions' }, [settings, accept])]);
+		bar = el('div', { id: 'scb-bar', 'class': 'scb-layout-' + (C.layout || 'card-right'), role: 'region', 'aria-label': 'Cookie-Hinweis' }, [p, el('div', { 'class': 'scb-actions' }, [settings, accept])]);
 		document.body.appendChild(bar);
 	}
 

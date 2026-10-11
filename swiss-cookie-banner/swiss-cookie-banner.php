@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Swiss Cookie Banner
  * Description: Lightweight cookie banner for Swiss sites. Accept / Settings, and Google tags stay blocked until the visitor consents.
- * Version: 0.4.0
+ * Version: 0.5.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * License: GPL-2.0-or-later
@@ -12,14 +12,23 @@
 
 defined( 'ABSPATH' ) || exit;
 
-const SCB_VERSION = '0.4.0';
+const SCB_VERSION = '0.5.0';
 const SCB_OPTION  = 'scb_options';
 
 function scb_defaults() {
 	return array(
 		'privacy_url'    => '',
 		'policy_version' => 1,
+		'layout'         => 'card-right',
 		'text'           => 'Wir verwenden Cookies, um die Website zu betreiben und – mit Ihrer Einwilligung – um die Nutzung zu analysieren.',
+	);
+}
+
+function scb_layouts() {
+	return array(
+		'card-right' => 'Corner card, bottom right',
+		'card-left'  => 'Corner card, bottom left',
+		'bar'        => 'Bar across the bottom',
 	);
 }
 
@@ -40,6 +49,7 @@ add_action( 'wp_enqueue_scripts', function () {
 		'window.SCB=' . wp_json_encode( array(
 			'version'    => (int) $o['policy_version'],
 			'text'       => $o['text'],
+			'layout'     => $o['layout'],
 			'privacyUrl' => $o['privacy_url'],
 		) ) . ';',
 		'before'
@@ -99,6 +109,7 @@ function scb_sanitize( $in ) {
 		'privacy_url'    => esc_url_raw( $in['privacy_url'] ?? '' ),
 		'policy_version' => max( 1, (int) ( $in['policy_version'] ?? 1 ) ),
 		'text'           => sanitize_text_field( $in['text'] ?? '' ),
+		'layout'         => array_key_exists( $in['layout'] ?? '', scb_layouts() ) ? $in['layout'] : 'card-right',
 	);
 }
 
@@ -113,6 +124,13 @@ function scb_render_page() {
 			<table class="form-table" role="presentation">
 				<tr><th><label for="scb_text">Banner text</label></th>
 					<td><textarea id="scb_text" name="<?php echo esc_attr( $n ); ?>[text]" rows="3" class="large-text"><?php echo esc_textarea( $o['text'] ); ?></textarea></td></tr>
+				<tr><th><label for="scb_layout">Layout</label></th>
+					<td><select id="scb_layout" name="<?php echo esc_attr( $n ); ?>[layout]">
+						<?php foreach ( scb_layouts() as $k => $label ) : ?>
+							<option value="<?php echo esc_attr( $k ); ?>" <?php selected( $o['layout'], $k ); ?>><?php echo esc_html( $label ); ?></option>
+						<?php endforeach; ?>
+					</select>
+					<p class="description">Colours and font follow your theme where possible.</p></td></tr>
 				<tr><th><label for="scb_privacy">Privacy policy URL</label></th>
 					<td><input id="scb_privacy" type="url" name="<?php echo esc_attr( $n ); ?>[privacy_url]" value="<?php echo esc_attr( $o['privacy_url'] ); ?>" class="regular-text">
 					<p class="description">Optional. Adds a link to the banner.</p></td></tr>
