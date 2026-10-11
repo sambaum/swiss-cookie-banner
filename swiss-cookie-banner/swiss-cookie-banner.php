@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Swiss Cookie Banner
  * Description: Lightweight cookie banner for Swiss sites. Accept / Settings, and Google tags stay blocked until the visitor consents.
- * Version: 0.5.0
+ * Version: 0.5.1
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * License: GPL-2.0-or-later
@@ -12,7 +12,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-const SCB_VERSION = '0.5.0';
+const SCB_VERSION = '0.5.1';
 const SCB_OPTION  = 'scb_options';
 
 function scb_defaults() {

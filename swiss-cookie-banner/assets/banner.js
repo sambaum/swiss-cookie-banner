@@ -96,10 +96,14 @@
 		document.body.appendChild(bar);
 	}
 
+	// Card layouts show the settings in the same corner without dimming the page; only the bar layout uses a centred modal.
+	function isBar() { return C.layout === 'bar'; }
+
 	function openModal(e) {
 		if (e && e.preventDefault) e.preventDefault();
 		if (modal) return;
 		lastFocus = document.activeElement;
+		if (bar) bar.style.display = 'none';
 		var cur = readConsent();
 
 		var cb = el('input', { type: 'checkbox', id: 'scb-analytics' });
@@ -115,14 +119,14 @@
 		acceptAll.onclick = function () { decide(true); };
 		close.onclick = function () { closeModal(); };
 
-		var box = el('div', { 'class': 'scb-box', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'scb-title' }, [
+		var box = el('div', { 'class': 'scb-box', role: 'dialog', 'aria-modal': isBar() ? 'true' : 'false', 'aria-labelledby': 'scb-title' }, [
 			close,
 			el('h2', { id: 'scb-title' }, ['Cookie-Einstellungen']),
 			el('label', { 'class': 'scb-row' }, [necessary, el('span', {}, [el('strong', {}, ['Notwendig']), el('br'), 'Für den Betrieb des Shops (Warenkorb, Login, Einwilligung). Immer aktiv.'])]),
 			el('label', { 'class': 'scb-row' }, [cb, el('span', {}, [el('strong', {}, ['Analyse']), el('br'), 'Google Analytics: hilft uns zu verstehen, wie die Website genutzt wird.'])]),
 			el('div', { 'class': 'scb-actions' }, [rejectAll, acceptAll, save])
 		]);
-		modal = el('div', { id: 'scb-modal' }, [box]);
+		modal = el('div', { id: 'scb-modal', 'class': 'scb-layout-' + (C.layout || 'card-right') }, [box]);
 		modal.addEventListener('mousedown', function (ev) { if (ev.target === modal) closeModal(); });
 		modal.addEventListener('keydown', trapKeys);
 		document.body.appendChild(modal);
@@ -133,12 +137,13 @@
 		if (!modal) return;
 		modal.remove();
 		modal = null;
+		if (bar) bar.style.display = '';
 		if (!skipFocus && lastFocus && document.contains(lastFocus)) lastFocus.focus();
 	}
 
 	function trapKeys(ev) {
 		if (ev.key === 'Escape') { closeModal(); return; }
-		if (ev.key !== 'Tab') return;
+		if (ev.key !== 'Tab' || !isBar()) return;
 		var f = modal.querySelectorAll('button, input:not([disabled]), a[href]');
 		var first = f[0], last = f[f.length - 1];
 		if (ev.shiftKey && document.activeElement === first) { ev.preventDefault(); last.focus(); }
